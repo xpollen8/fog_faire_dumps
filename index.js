@@ -110,7 +110,7 @@ function parseRow({ form_post_id, form_value } = row)
       }
 
       if (a === 'file-booth-diagramcfdb7_file') { a = 'file-booth-diagram' }
-      if (keep) { ret[a] = arr[i + 1]; }
+      if (keep) { ret[a] = arr[i + 1].replace(/\r?\n/g, '<br/>'); }
     }
   });
   return ret
