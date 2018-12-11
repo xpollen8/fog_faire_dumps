@@ -9,8 +9,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "batchflow": "^0.4.0",
-    "camelcase": "^5.0.0",
     "fs": "0.0.1-security",
     "mysql-ssh": "^1.0.6",
     "write-csv": "^1.0.0"

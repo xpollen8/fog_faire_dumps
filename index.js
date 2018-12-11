@@ -10,7 +10,6 @@
  */
 const fs = require('fs');
 const mysql = require('mysql-ssh');
-const camelcase = require('camelcase');
 const writeCSV = require('write-csv')
 const secrets = require('./secrets');
 
@@ -47,19 +46,24 @@ function fetchCompanies(cb) {
 
 fetchCompanies((err, rows) => {
   if (err) {
-		console.log("ERROR", err);
+    console.log("ERROR", err);
   } else {
-    let  last = '';
+    let last = '';
+    let data = {};
     rows.map((row,index) => {
       const current = `${row.company}.${row.form_post_id}`;
       if (current == last) {
         console.log("DUPE", index, row.compant);
       } else {
-        const  company = camelcase(row.company.replace(/& /g,''));
-        const filename = company + '_' + row.form_post_id + '.csv';
-        writeCSV(`./${filename}`, [ row ]);
+        if (!data[row.form_post_id]) { data[row.form_post_id] = [] }
+
+        data[row.form_post_id].push(row);
       }
       last = current;
-    })
+    });
+    Object.keys(data).map((k) => {
+      const filename = k + '.csv';
+      writeCSV(`./${filename}`, data[k]);
+    });
   }
 })
