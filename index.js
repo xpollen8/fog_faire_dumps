@@ -101,7 +101,7 @@ function parseRow({ form_post_id, form_value } = row)
             a == 'image-caption-title' ||
             a == 'image-caption-date' ||
             a == 'image-caption-media' ||
-            a == 'image-caption-size]' ||
+            a == 'image-caption-size' ||
             a == 'image-caption-edition' ||
             a == 'image-caption-credit' ||
             a == 'image-caption-courtesy'
