@@ -46,7 +46,7 @@ function fetchCompanies(cb) {
 
 function parseRow({ form_post_id, form_value } = row)
 {
-  const arr = form_value.replace(/&#047;/g, '\/').split(';').map((r, i) => {
+  const arr = form_value.replace(/&#039;/g, "'").replace(/&#047;/g, '\/').split(';').map((r, i) => {
     return r.replace(/^s:[0-9]*:/g, '').replace(/^"/, '').replace(/"$/, '');
   });
   const ret = {};
@@ -110,7 +110,7 @@ function parseRow({ form_post_id, form_value } = row)
       }
 
       if (a === 'file-booth-diagramcfdb7_file') { a = 'file-booth-diagram' }
-      if (keep) { ret[a] = arr[i + 1].replace(/\r?\n/g, '<br/>'); }
+      if (keep) { ret[a] = arr[i + 1].replace(/\r?\n/g, '\\n'); }
     }
   });
   return ret
