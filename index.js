@@ -44,6 +44,78 @@ function fetchCompanies(cb) {
   });
 }
 
+function parseRow({ form_post_id, form_value } = row)
+{
+  const arr = form_value.split(';').map((r, i) => {
+    return r.replace(/^s:[0-9]*:/g, '').replace(/^"/, '').replace(/"$/, '');
+  });
+  const ret = {};
+  arr.map((a,i) => {
+    if (!(i % 2)) {
+      let keep = false;
+      switch (form_post_id) {
+        case 169:
+          keep = (
+            a == 'contact-email' ||
+            a == 'person1-name' ||
+            a == 'person1-photo-url' ||
+            a == 'person2-name' ||
+            a == 'person2-photo-url' ||
+            a == 'person3-name' ||
+            a == 'person3-photo-url' ||
+            a == 'person4-name' ||
+            a == 'person4-photo-url' ||
+            a == 'person5-name' ||
+            a == 'person5-photo-url' ||
+            a == 'person6-name' ||
+            a == 'person6-photo-url' ||
+            a == 'person7-name' ||
+            a == 'person7-photo-url' ||
+            a == 'person8-name' ||
+            a == 'person8-photo-url' ||
+            a == 'person9-name' ||
+            a == 'person9-photo-url' ||
+            a == 'person10-name' ||
+            a == 'person10-photo-url'
+          ) ? true : false;
+        break;
+        case 64:
+          keep = (
+            a == 'contact-email' ||
+            a == 'shipping-info'
+          ) ? true : false;
+        break;
+        case 97:
+          keep = (
+            a == 'contact-email' ||
+            a == 'file-booth-diagramcfdb7_file'
+          ) ? true : false;
+        break;
+        case 173:
+          keep = (
+            a == 'contact-email' ||
+            a == 'gallery-description' ||
+            a == 'image-caption-artist' ||
+            a == 'file-catalog-image' ||
+            a == 'image-caption-artist' ||
+            a == 'image-caption-title' ||
+            a == 'image-caption-date' ||
+            a == 'image-caption-media' ||
+            a == 'image-caption-size]' ||
+            a == 'image-caption-edition' ||
+            a == 'image-caption-credit' ||
+            a == 'image-caption-courtesy'
+          ) ? true : false;
+        break;
+      }
+
+      if (a === 'file-booth-diagramcfdb7_file') { a = 'file-booth-diagram' }
+      if (keep) { ret[a] = arr[i + 1]; }
+    }
+  });
+  return ret
+}
+
 fetchCompanies((err, rows) => {
   if (err) {
     console.log("ERROR", err);
@@ -53,11 +125,15 @@ fetchCompanies((err, rows) => {
     rows.map((row,index) => {
       const current = `${row.company}.${row.form_post_id}`;
       if (current == last) {
-        console.log("DUPE", index, row.compant);
+        console.log("OLDER ROW - SKIPPING", index, row.company);
       } else {
         if (!data[row.form_post_id]) { data[row.form_post_id] = [] }
 
-        data[row.form_post_id].push(row);
+        data[row.form_post_id].push({
+          'date': new Date(row.form_date),
+          'company': row.company,
+          ...parseRow(row)
+        });
       }
       last = current;
     });
