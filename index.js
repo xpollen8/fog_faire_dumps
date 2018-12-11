@@ -46,7 +46,7 @@ function fetchCompanies(cb) {
 
 function parseRow({ form_post_id, form_value } = row)
 {
-  const arr = form_value.split(';').map((r, i) => {
+  const arr = form_value.replace(/&#047;/g, '\/').split(';').map((r, i) => {
     return r.replace(/^s:[0-9]*:/g, '').replace(/^"/, '').replace(/"$/, '');
   });
   const ret = {};
