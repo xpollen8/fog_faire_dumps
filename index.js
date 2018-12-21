@@ -130,7 +130,7 @@ fetchCompanies((err, rows) => {
         if (!data[row.form_post_id]) { data[row.form_post_id] = [] }
 
         data[row.form_post_id].push({
-          'date': new Date(row.form_date).toString(),
+          'date': row.form_date.toString(),
           'company': row.company,
           ...parseRow(row)
         });
