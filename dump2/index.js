@@ -23,18 +23,27 @@ function fetchCompanies(cb) {
   .then(client => {
       console.log("fetching orders..");
       let rows = []
-      client.query(`select u.user_email, wep.company, woi.order_id, woi.order_item_name as product_name, woim1.meta_value as subtotal, woim2.meta_value as quantity, ewo.order_date
-        from wp_woocommerce_order_items woi
+      client.query(`select
+          u.user_email,
+          wep.company,
+          woi.order_id,
+          woi.order_item_name as product_name,
+          woim1.meta_value as subtotal,
+          woim2.meta_value as quantity,
+          ewo.order_date
+        from
+          wp_woocommerce_order_items woi
         join wp_woocommerce_order_itemmeta woim1 on woi.order_item_id = woim1.order_item_id
+          and woim1.meta_key = '_line_subtotal'
         join wp_woocommerce_order_itemmeta woim2 on woi.order_item_id = woim2.order_item_id
+          and woim2.meta_key = '_qty'
         join wp_erp_wc_orders ewo on ewo.order_id = woi.order_id
         join wp_erp_peoples ep on ewo.people_id = ep.id
         join wp_erp_crm_customer_companies eccc on eccc.customer_id = ep.id
         join wp_erp_peoples wep on wep.id = eccc.company_id
         join wp_users u on u.id=ep.user_id
         where 1
-        and (woim1.meta_key = '_line_subtotal' and woim2.meta_key = '_qty')
-        order by woi.order_id`, function(err, results, fields) {
+        order by wep.company, woi.order_id`, function(err, results, fields) {
         results.map((r) => {
           r.order_date = r.order_date.toISOString();
           rows.push({
