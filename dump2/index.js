@@ -3,6 +3,8 @@ const mysql = require('mysql-ssh');
 const writeCSV = require('write-csv')
 const secrets = require('../secrets');
 
+const  output_file = './orders.csv'
+
 function fetchCompanies(cb) {
   mysql.connect(
   {
@@ -19,125 +21,60 @@ function fetchCompanies(cb) {
   }
   )
   .then(client => {
-      console.log("fetching companies");
-      /*
+      console.log("fetching orders..");
       let rows = []
-      client.query("select company,form_date,form_post_id,form_value from wp_db7_forms f join (select company as company from wp_erp_peoples where last_name = '(company)') c on f.form_value regexp company where form_post_id in(97,169,64,173) order by company, form_post_id, form_date desc;", function(err, results, fields) {
+      client.query(`select u.user_email, wep.company, woi.order_id, woi.order_item_name as product_name, woim.meta_key as meta_key, woim.meta_value as meta_value, ewo.order_date
+        from wp_woocommerce_order_items woi
+        join wp_woocommerce_order_itemmeta woim on woi.order_item_id = woim.order_item_id
+        join wp_erp_wc_orders ewo on ewo.order_id = woi.order_id
+        join wp_erp_peoples ep on ewo.people_id = ep.id
+        join wp_erp_crm_customer_companies eccc on eccc.customer_id = ep.id
+        join wp_erp_peoples wep on wep.id = eccc.company_id
+        join wp_users u on u.id=ep.user_id
+        where 1
+        and (woim.meta_key = '_line_subtotal' or woim.meta_key = '_qty')
+        order by woi.order_id, meta_key`, function(err, results, fields) {
+        let last_order_id;
+        let quantity;
+        let subtotal;
+        let obj = {};
         results.map((r) => {
-          rows.push(r);
+          //console.log(r);
+          if (r.order_id == last_order_id) {
+            obj[r.meta_key] = r.meta_value;
+            delete r.meta_value
+            delete r.meta_key
+            subtotal = obj._line_subtotal;
+            quantity = obj._qty;
+            r.order_date = new Date(r.order_date).toISOString();
+            rows.push({
+              ...r,
+              quantity,
+              subtotal
+            });
+            delete obj.quantity;
+            delete obj.subtotal;
+          } else {
+            obj[r.meta_key] = r.meta_value;
+            delete r.meta_value;
+            delete r.meta_key
+          }
+          last_order_id = r.order_id;
         })
         mysql.close();
         cb(null, rows);
       })
-      */
-      mysql.close();
-      cb(null, null);
   })
   .catch(err => {
     cb(err);
   });
 }
 
-function parseRow({ form_post_id, form_value } = row)
-{
-  /*
-  const arr = form_value.replace(/&#039;/g, "'").replace(/&#047;/g, '\/').split(';').map((r, i) => {
-    return r.replace(/^s:[0-9]*:/g, '').replace(/^"/, '').replace(/"$/, '');
-  });
-  const ret = {};
-  arr.map((a,i) => {
-    if (!(i % 2)) {
-      let keep = false;
-      switch (form_post_id) {
-        case 169:
-          keep = (
-            a == 'contact-email' ||
-            a == 'person1-name' ||
-            a == 'person1-photo-url' ||
-            a == 'person2-name' ||
-            a == 'person2-photo-url' ||
-            a == 'person3-name' ||
-            a == 'person3-photo-url' ||
-            a == 'person4-name' ||
-            a == 'person4-photo-url' ||
-            a == 'person5-name' ||
-            a == 'person5-photo-url' ||
-            a == 'person6-name' ||
-            a == 'person6-photo-url' ||
-            a == 'person7-name' ||
-            a == 'person7-photo-url' ||
-            a == 'person8-name' ||
-            a == 'person8-photo-url' ||
-            a == 'person9-name' ||
-            a == 'person9-photo-url' ||
-            a == 'person10-name' ||
-            a == 'person10-photo-url'
-          ) ? true : false;
-        break;
-        case 64:
-          keep = (
-            a == 'contact-email' ||
-            a == 'shipping-info'
-          ) ? true : false;
-        break;
-        case 97:
-          keep = (
-            a == 'contact-email' ||
-            a == 'file-booth-diagramcfdb7_file'
-          ) ? true : false;
-        break;
-        case 173:
-          keep = (
-            a == 'contact-email' ||
-            a == 'gallery-description' ||
-            a == 'image-caption-artist' ||
-            a == 'file-catalog-image' ||
-            a == 'image-caption-artist' ||
-            a == 'image-caption-title' ||
-            a == 'image-caption-date' ||
-            a == 'image-caption-media' ||
-            a == 'image-caption-size' ||
-            a == 'image-caption-edition' ||
-            a == 'image-caption-credit' ||
-            a == 'image-caption-courtesy'
-          ) ? true : false;
-        break;
-      }
-
-      if (a === 'file-booth-diagramcfdb7_file') { a = 'file-booth-diagram' }
-      if (keep) { ret[a] = arr[i + 1].replace(/\r?\n/g, '\\n'); }
-    }
-  });
-  return ret
-  */
-}
-
 fetchCompanies((err, rows) => {
   if (err) {
     console.log("ERROR", err);
   } else {
-    let last = '';
-    let data = {};
-    /*
-    rows.map((row,index) => {
-      const current = `${row.company}.${row.form_post_id}`;
-      if (current == last) {
-        console.log("OLDER ROW - SKIPPING", index, row.company);
-      } else {
-        if (!data[row.form_post_id]) { data[row.form_post_id] = [] }
-
-        data[row.form_post_id].push({
-          'date': row.form_date.toString(),
-          'company': row.company,
-          ...parseRow(row)
-        });
-      }
-      last = current;
-    });
-    Object.keys(data).map((k) => {
-      const filename = k + '.csv';
-      writeCSV(`./${filename}`, data[k]);
-    });
-    */
+    console.log(`writing to file ${output_file}`);
+    writeCSV(`./${output_file}`, rows);
   }
 })
