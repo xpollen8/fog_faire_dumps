@@ -33,17 +33,17 @@ function fetchCompanies(cb) {
         join wp_users u on u.id=ep.user_id
         where 1
         and (woim.meta_key = '_line_subtotal' or woim.meta_key = '_qty')
-        order by woi.order_id, meta_key`, function(err, results, fields) {
+        `, function(err, results, fields) {
         let last_order_id;
         let quantity;
         let subtotal;
         let obj = {};
         results.map((r) => {
           //console.log(r);
+          obj[r.meta_key] = r.meta_value;
+          delete r.meta_value;
+          delete r.meta_key
           if (r.order_id == last_order_id) {
-            obj[r.meta_key] = r.meta_value;
-            delete r.meta_value
-            delete r.meta_key
             subtotal = obj._line_subtotal;
             quantity = obj._qty;
             r.order_date = new Date(r.order_date).toISOString();
@@ -54,10 +54,6 @@ function fetchCompanies(cb) {
             });
             delete obj.quantity;
             delete obj.subtotal;
-          } else {
-            obj[r.meta_key] = r.meta_value;
-            delete r.meta_value;
-            delete r.meta_key
           }
           last_order_id = r.order_id;
         })
