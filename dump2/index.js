@@ -34,7 +34,7 @@ function fetchCompanies(cb) {
         join wp_users u on u.id=ep.user_id
         where 1
         and (woim1.meta_key = '_line_subtotal' and woim2.meta_key = '_qty')
-        `, function(err, results, fields) {
+        order by woi.order_id`, function(err, results, fields) {
         results.map((r) => {
           r.order_date = r.order_date.toISOString();
           rows.push({
