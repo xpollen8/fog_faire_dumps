@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "fs": "0.0.1-security",
+    "got": "^9.5.0",
     "mysql-ssh": "^1.0.6",
     "write-csv": "^1.0.0"
   }

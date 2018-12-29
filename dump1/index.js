@@ -1,6 +1,7 @@
 const fs = require('fs');
 const mysql = require('mysql-ssh');
 const writeCSV = require('write-csv')
+const got = require('got');
 const secrets = require('../secrets');
 
 function fetchCompanies(cb) {
@@ -105,6 +106,27 @@ function parseRow({ form_post_id, form_value } = row)
   });
   return ret
 }
+const done = {
+  headshots: 0,
+  headshots_cropped: 0,
+}
+
+function grabImage(type, { uri, filename, total }) {
+  fs.stat(`${type}/${filename}`, (err, stat) => {
+    if (err) {
+      (async (filename) => {
+        const response = await got(uri, { baseUrl: secrets[type].baseurl, encoding: 'binary' })
+        fs.writeFile(`${type}/${filename}`, response.body, 'binary', (err) => {
+          done[type]++;
+          console.log(`DONE ${done[type]}/${total} ${type}/${filename}`);
+        });
+      })(filename);
+    } else {
+      done[type]++;
+      console.log(`ALREADY ${done[type]}/${total} ${type}/${filename}`);
+    }
+  })
+}
 
 fetchCompanies((err, rows) => {
   if (err) {
@@ -130,6 +152,25 @@ fetchCompanies((err, rows) => {
     Object.keys(data).map((k) => {
       const filename = k + '.csv';
       writeCSV(`./${filename}`, data[k]);
+      if (k == '169') {
+        const images = [];
+        data['169'].map((r) => {
+          for (var i = 1 ; i <= 20 ; i++) {
+            const lookup = `person${i}-photo-url`;
+            if (r[lookup]) {
+              const paths = r[lookup].split('/');
+              const filename = paths[paths.length - 1];
+              images.push({ uri: r[lookup], filename });
+            }
+          }
+        });
+        console.log(`There are ${images.length} images to download`);
+
+        images.map((image, index) => {
+          grabImage('headshots_cropped', { ...image, total: images.length});
+          grabImage('headshots', { ...image, total: images.length});
+        });
+      }
     });
   }
 })
