@@ -24,6 +24,7 @@ function fetchCompanies(cb) {
       let rows = []
       client.query("select company,form_date,form_post_id,form_value from wp_db7_forms f join (select company as company from wp_erp_peoples where last_name = '(company)') c on f.form_value regexp company where form_post_id in(97,169,64,173) order by company, form_post_id, form_date desc;", function(err, results, fields) {
         results.map((r) => {
+          console.log("ROW", r);
           rows.push(r);
         })
         mysql.close();
@@ -112,6 +113,8 @@ const done = {
 }
 
 function grabImage(type, { uri, filename, total }) {
+  const ext = uri.split('.')[1];
+  filename = filename.replace(/ /g, '_').replace(/'/g, '') + '.' + ext;
   fs.stat(`${type}/${filename}`, (err, stat) => {
     if (err) {
       (async (filename) => {
@@ -156,11 +159,13 @@ fetchCompanies((err, rows) => {
         const images = [];
         data['169'].map((r) => {
           for (var i = 1 ; i <= 20 ; i++) {
-            const lookup = `person${i}-photo-url`;
-            if (r[lookup]) {
-              const paths = r[lookup].split('/');
-              const filename = paths[paths.length - 1];
-              images.push({ uri: r[lookup], filename });
+            const url_lookup = `person${i}-photo-url`;
+            const name_lookup = `person${i}-name`;
+            if (r[url_lookup]) {
+              const paths = r[url_lookup].split('/');
+              const filename = r[name_lookup];
+              //const filename = paths[paths.length - 1];
+              images.push({ uri: r[url_lookup], filename });
             }
           }
         });
