@@ -160,12 +160,8 @@ fetchCompanies((err, rows) => {
         data['169'].map((r) => {
           for (var i = 1 ; i <= 20 ; i++) {
             const url_lookup = `person${i}-photo-url`;
-            const name_lookup = `person${i}-name`;
             if (r[url_lookup]) {
-              const paths = r[url_lookup].split('/');
-              const filename = r[name_lookup];
-              //const filename = paths[paths.length - 1];
-              images.push({ uri: r[url_lookup], filename });
+              images.push({ uri: r[url_lookup], filename: r[`person${i}-name`] });
             }
           }
         });
