@@ -24,7 +24,6 @@ function fetchCompanies(cb) {
       let rows = []
       client.query("select company,form_date,form_post_id,form_value from wp_db7_forms f join (select company as company from wp_erp_peoples where last_name = '(company)') c on f.form_value regexp company where form_post_id in(97,169,64,173) order by company, form_post_id, form_date desc;", function(err, results, fields) {
         results.map((r) => {
-          console.log("ROW", r);
           rows.push(r);
         })
         mysql.close();
