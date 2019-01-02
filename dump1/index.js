@@ -114,7 +114,7 @@ const done = {
 
 function grabImage(type, { uri, filename, total }) {
   const ext = uri.split('.')[1];
-  filename = filename.replace(/ /g, '_').replace(/'/g, '') + '.' + ext;
+  filename = filename.trim().replace(/ /g, '_').replace(/'/g, '') + '.' + ext;
   fs.stat(`${type}/${filename}`, (err, stat) => {
     if (err) {
       (async (filename) => {
