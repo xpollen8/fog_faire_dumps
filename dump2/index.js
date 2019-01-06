@@ -5,7 +5,7 @@ const secrets = require('../secrets');
 
 const  output_file = './orders.csv'
 
-function fetchCompanies(cb) {
+function fetchOrders(cb) {
   mysql.connect(
   {
     host: secrets.ssh.host,
@@ -29,10 +29,16 @@ function fetchCompanies(cb) {
           woi.order_id,
           woi.order_item_name as product_name,
           woim1.meta_value as subtotal,
+          wpm.meta_value as discount,
           woim2.meta_value as quantity,
-          ewo.order_date
+          ewo.order_date,
+          wpm2.meta_value as date_paid
         from
           wp_woocommerce_order_items woi
+        join wp_postmeta wpm2 on wpm2.post_id = woi.order_id
+          and wpm2.meta_key = '_paid_date'
+        join wp_postmeta wpm on wpm.post_id = woi.order_id
+          and wpm.meta_key = '_cart_discount'
         join wp_woocommerce_order_itemmeta woim1 on woi.order_item_id = woim1.order_item_id
           and woim1.meta_key = '_line_subtotal'
         join wp_woocommerce_order_itemmeta woim2 on woi.order_item_id = woim2.order_item_id
@@ -45,6 +51,9 @@ function fetchCompanies(cb) {
         where 1
         order by wep.company, woi.order_id`, function(err, results, fields) {
         results.map((r) => {
+          if (r.date_paid) {
+            r.date_paid = new Date(r.date_paid).toISOString();
+          }
           r.order_date = r.order_date.toISOString();
           rows.push({
             ...r,
@@ -59,7 +68,7 @@ function fetchCompanies(cb) {
   });
 }
 
-fetchCompanies((err, rows) => {
+fetchOrders((err, rows) => {
   if (err) {
     console.log("ERROR", err);
   } else {
