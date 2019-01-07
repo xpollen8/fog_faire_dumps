@@ -1,0 +1,4 @@
+node_modules
+./secrets.json
+*.csv
+dump1/fogfair-credentials.zip

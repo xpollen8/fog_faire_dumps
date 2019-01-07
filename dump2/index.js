@@ -32,11 +32,11 @@ function fetchOrders(cb) {
           wpm.meta_value as discount,
           woim2.meta_value as quantity,
           ewo.order_date,
-          wpm2.meta_value as date_paid
+          wpm2.meta_value as date_completed
         from
           wp_woocommerce_order_items woi
         join wp_postmeta wpm2 on wpm2.post_id = woi.order_id
-          and wpm2.meta_key = '_paid_date'
+          and wpm2.meta_key = '_completed_date'
         join wp_postmeta wpm on wpm.post_id = woi.order_id
           and wpm.meta_key = '_cart_discount'
         join wp_woocommerce_order_itemmeta woim1 on woi.order_item_id = woim1.order_item_id
@@ -51,8 +51,8 @@ function fetchOrders(cb) {
         where 1
         order by wep.company, woi.order_id`, function(err, results, fields) {
         results.map((r) => {
-          if (r.date_paid) {
-            r.date_paid = new Date(r.date_paid).toISOString();
+          if (r.date_completed) {
+            r.date_completed = new Date(r.date_completed).toISOString();
           }
           r.order_date = r.order_date.toISOString();
           rows.push({
