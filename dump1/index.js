@@ -136,6 +136,7 @@ fetchCompanies((err, rows) => {
   } else {
     let last = '';
     let data = {};
+    const formatYmd = date => date.toISOString().slice(0, 10);
     rows.map((row,index) => {
       const current = `${row.company}.${row.form_post_id}`;
       if (current == last) {
@@ -144,7 +145,7 @@ fetchCompanies((err, rows) => {
         if (!data[row.form_post_id]) { data[row.form_post_id] = [] }
 
         data[row.form_post_id].push({
-          'date': row.form_date.toString(),
+          'date': formatYmd(row.form_date),
           'company': row.company,
           ...parseRow(row)
         });
