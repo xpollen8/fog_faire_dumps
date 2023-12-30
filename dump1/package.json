@@ -11,7 +11,7 @@
   "dependencies": {
     "fs": "0.0.1-security",
     "got": "^9.5.0",
-    "mysql-ssh": "^1.0.6",
+    "mysql": "^2.18.1",
     "write-csv": "^1.0.0"
   }
 }

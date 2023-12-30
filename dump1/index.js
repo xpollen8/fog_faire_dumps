@@ -1,38 +1,26 @@
 const fs = require('fs');
-const mysql = require('mysql-ssh');
+const mysql = require('mysql');
 const writeCSV = require('write-csv')
 const got = require('got');
 const secrets = require('../secrets');
 
 function fetchCompanies(cb) {
-  mysql.connect(
-  {
-    host: secrets.ssh.host,
-    user: secrets.ssh.username,
-    privateKey: fs.readFileSync(secrets.ssh.keyfile),
-    timeout: 60000
-  },
-  {
-    host: secrets.mysql.host,
-    user: secrets.mysql.username,
-    password: secrets.mysql.password,
-    database: secrets.mysql.database
-  }
-  )
-  .then(client => {
-      console.log("fetching companies");
-      let rows = []
-      client.query("select company,form_date,form_post_id,form_value from wp_db7_forms f join (select company as company from wp_erp_peoples where last_name = '(company)') c on f.form_value regexp company where form_post_id in(97,169,64,173) order by company, form_post_id, form_date desc;", function(err, results, fields) {
-        results.map((r) => {
-          rows.push(r);
-        })
-        mysql.close();
-        cb(null, rows);
-      })
-  })
-  .catch(err => {
+	try {
+		const connection = mysql.createConnection(secrets.mysql);
+		connection.connect();
+
+		console.log("fetching companies");
+		let rows = []
+		connection.query("select company,form_date,form_post_id,form_value from wp_db7_forms f join (select company as company from wp_erp_peoples where last_name = '(company)') c on f.form_value regexp company where form_post_id in(97,169,64,173) order by company, form_post_id, form_date desc;", function(err, results, fields) {
+			results.map((r) => {
+				rows.push(r);
+			})
+			connection.end();
+			cb(null, rows);
+		})
+	} catch (err) {
     cb(err);
-  });
+  }
 }
 
 function parseRow({ form_post_id, form_value } = row)
