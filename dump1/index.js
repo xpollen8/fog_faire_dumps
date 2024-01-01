@@ -1,7 +1,7 @@
 const fs = require('fs');
 const mysql = require('mysql');
 const writeCSV = require('write-csv')
-const got = require('got');
+const download = require('image-downloader');
 const secrets = require('../secrets');
 
 function fetchCompanies(cb) {
@@ -10,13 +10,9 @@ function fetchCompanies(cb) {
 		connection.connect();
 
 		console.log("fetching companies");
-		let rows = []
 		connection.query("select company,form_date,form_post_id,form_value from wp_db7_forms f join (select company as company from wp_erp_peoples where last_name = '(company)') c on f.form_value regexp company where form_post_id in(97,169,64,173) order by company, form_post_id, form_date desc;", function(err, results, fields) {
-			results.map((r) => {
-				rows.push(r);
-			})
 			connection.end();
-			cb(null, rows);
+			cb(null, results);
 		})
 	} catch (err) {
     cb(err);
@@ -29,7 +25,7 @@ function parseRow({ form_post_id, form_value } = row)
     return r.replace(/^s:[0-9]*:/g, '').replace(/^"/, '').replace(/"$/, '');
   });
   const ret = {};
-  arr.map((a,i) => {
+  arr.forEach((a,i) => {
     if (!(i % 2)) {
       let keep = false;
       switch (form_post_id) {
@@ -99,33 +95,44 @@ const done = {
   headshots_cropped: 0,
 }
 
-function grabImage(type, { uri, filename, total }) {
+const trimFilename = (uri, filename) => {
   const ext = uri.split('.')[1];
-  filename = filename.trim().replace(/ /g, '_').replace(/'/g, '') + '.' + ext;
-  fs.stat(`${type}/${filename}`, (err, stat) => {
-    if (err) {
-      (async (filename) => {
-        const response = await got(uri, { baseUrl: secrets[type].baseurl, encoding: 'binary' })
-        fs.writeFile(`${type}/${filename}`, response.body, 'binary', (err) => {
-          done[type]++;
-          console.log(`DONE ${done[type]}/${total} ${type}/${filename}`);
-        });
-      })(filename);
-    } else {
-      done[type]++;
-      console.log(`ALREADY ${done[type]}/${total} ${type}/${filename}`);
-    }
-  })
+  return filename.trim().replace(/ /g, '_').replace(/'/g, '') + '.' + ext;
 }
 
-fetchCompanies((err, rows) => {
+const grabImage = async (type, { uri, filename, total }) => {
+	const filenameTrimmed = trimFilename(uri, filename);
+
+	try {
+		fs.readFileSync(`${type}/${filenameTrimmed}`);
+		done[type]++;
+		console.log(`ALREADY ${done[type]}/${total} ${type}/${filenameTrimmed}`);
+	} catch (e) {
+		// does not yet exist
+		//console.log(`FETCH ${type}/${filenameTrimmed}`);
+
+		const options = {
+			url: `${secrets[type].baseurl}/${uri}`,
+			dest: `${process.env.PWD}/${type}/${filenameTrimmed}`
+		};
+
+		return await download.image(options)
+			.then(({ filename }) => {
+				done[type]++;
+				console.log(`DONE ${done[type]}/${total} ${filename}`); // saved to /path/to/dest/image.jpg
+			})
+			.catch((err) => console.error(err));
+	}
+}
+
+fetchCompanies(async (err, rows) => {
   if (err) {
     console.log("ERROR", err);
   } else {
     let last = '';
     let data = {};
     const formatYmd = date => date.toISOString().slice(0, 10);
-    rows.map((row,index) => {
+    rows.forEach((row,index) => {
       const current = `${row.company}.${row.form_post_id}`;
       if (current == last) {
         console.log("OLDER ROW - SKIPPING", index, row.company);
@@ -140,12 +147,13 @@ fetchCompanies((err, rows) => {
       }
       last = current;
     });
-    Object.keys(data).map((k) => {
+
+		const images = [];
+    Object.keys(data).forEach((k) => {
       const filename = k + '.csv';
       writeCSV(`./${filename}`, data[k]);
       if (k == '169') {
-        const images = [];
-        data['169'].map((r) => {
+        data['169'].forEach((r) => {
           for (var i = 1 ; i <= 20 ; i++) {
             const url_lookup = `person${i}-photo-url`;
             if (r[url_lookup]) {
@@ -153,13 +161,13 @@ fetchCompanies((err, rows) => {
             }
           }
         });
-        console.log(`There are ${images.length} images to download`);
-
-        images.map((image, index) => {
-          grabImage('headshots_cropped', { ...image, total: images.length});
-          grabImage('headshots', { ...image, total: images.length});
-        });
       }
     });
+		console.log(`There are ${images.length} images to download`);
+
+		for (const image of images) {
+			await grabImage('headshots_cropped', { ...image, total: images.length});
+			await grabImage('headshots', { ...image, total: images.length})
+		}
   }
 })
