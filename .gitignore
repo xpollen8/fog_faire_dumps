@@ -1,4 +1,9 @@
 node_modules
-secrets.json
+./secrets.json
+./secrets.json_MINE
 *.csv
 ignore
+*.jpg
+*.png
+*.pdf
+*.tiff
